@@ -6,18 +6,13 @@ let container = [".q5"];
 
 let width = window.innerWidth;
 let height = window.innerHeight;
-let downscale = 14;
+let downscale = 12;
 
 let v = (x, y) => ({ x, y });
 
-let sensorAngle = 55;
+let sensorAngle = 39;
 let sensorDist = 50;
 let rotationAngle = sensorAngle;
-
-let cell = () => {
-	let t = { brightness: Math.random() };
-	return t;
-};
 
 function createGrid(width, cellSize) {
 	const cellsPerRow = Math.floor(width / cellSize);
@@ -33,6 +28,7 @@ function createGrid(width, cellSize) {
 			y: y * cellSize,
 			size: cellSize,
 			brightness: Math.random(),
+			marked: true,
 		};
 	});
 
@@ -91,7 +87,7 @@ let mold = () => {
 		if (y < 0) y = y * -1 + 100;
 
 		let cell = pixies.getCell(x, y);
-		if (cell) cell.brightness = 1;
+		if (cell && !cell.marked) cell.brightness = 1;
 
 		sensorRightPos.x = x + sensorDist * Math.cos(heading + sensorAngle);
 		sensorRightPos.y = y + sensorDist * Math.sin(heading + sensorAngle);
@@ -149,10 +145,25 @@ function init() {
 	let p = new p5("instance", el);
 
 	let molds = Array(150).fill(0).map((e) => mold());
+	let textPoints = [];
+	let font;
+
+	p.preload = () => {
+		font = p.loadFont("./fs/fonts/GapSans.ttf");
+		console.log(font);
+	};
 
 	p.setup = () => {
 		p.createCanvas(window.innerWidth, window.innerHeight);
+		p.textFont(font);
 		p.frameRate(60);
+		p.textSize(454);
+		textPoints = p.textToPoints("BOOK", 100, 856, .1, .5);
+		textPoints.forEach((e) => {
+			let pix = pixies.getCell(e.x, e.y);
+			if (pix) pix.marked = false;
+		});
+		p.textSize(7);
 	};
 
 	setTimeout(() => {
@@ -177,9 +188,9 @@ function init() {
 				pix.brightness -= .01;
 			});
 
-			// molds.forEach((m) => m.draw(p));
-
-			// pixies.forEach(e => )
+			textPoints.forEach((e) => {
+				p.fill(255);
+			});
 		};
 	}, 150);
 	// p.setup = () => {
