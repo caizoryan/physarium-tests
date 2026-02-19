@@ -4,14 +4,18 @@ import { dom } from "./lib/dom.js";
 
 let container = [".q5"];
 
+let color1 = "";
+let color2 = "";
+let color3 = "";
+
 let width = window.innerWidth;
 let height = window.innerHeight;
-let downscale = 12;
+let downscale = 9;
 
 let v = (x, y) => ({ x, y });
 
-let sensorAngle = 39;
-let sensorDist = 50;
+let sensorAngle = 45;
+let sensorDist = 15;
 let rotationAngle = sensorAngle;
 
 function createGrid(width, cellSize) {
@@ -27,7 +31,7 @@ function createGrid(width, cellSize) {
 			x: x * cellSize,
 			y: y * cellSize,
 			size: cellSize,
-			brightness: Math.random(),
+			brightness: Math.random() * .1,
 			marked: true,
 		};
 	});
@@ -63,7 +67,7 @@ let mold = () => {
 	let x = Math.random() * width;
 	let y = Math.random() * height;
 	let r = 10;
-	let dist = 15;
+	let dist = sensorDist;
 	let heading = Math.random() * 360;
 
 	let vx = Math.cos(heading);
@@ -87,7 +91,11 @@ let mold = () => {
 		if (y < 0) y = y * -1 + 100;
 
 		let cell = pixies.getCell(x, y);
-		if (cell && !cell.marked) cell.brightness = 1;
+		if (
+			cell &&
+			!cell.marked
+		) cell.brightness = 1;
+		// if (cell && cell.marked) cell.brightness = .2;
 
 		sensorRightPos.x = x + sensorDist * Math.cos(heading + sensorAngle);
 		sensorRightPos.y = y + sensorDist * Math.sin(heading + sensorAngle);
@@ -118,8 +126,8 @@ let mold = () => {
 		p.fill(255);
 		p.ellipse(x, y, r);
 
-		p.stroke(255);
-		p.line(x, y, x + dist * vx, y + dist * vy);
+		// p.stroke(255);
+		// p.line(x, y, x + dist * vx, y + dist * vy);
 
 		p.fill(255, 0, 0);
 		p.line(x, y, sensorRightPos.x, sensorRightPos.y);
@@ -144,53 +152,146 @@ function init() {
 	document.body.appendChild(el);
 	let p = new p5("instance", el);
 
-	let molds = Array(150).fill(0).map((e) => mold());
+	let molds = Array(60).fill(0).map((e) => mold());
 	let textPoints = [];
+	let alphabetPoints = {};
 	let font;
 
 	p.preload = () => {
-		font = p.loadFont("./fs/fonts/GapSans.ttf");
+		// font = p.loadFont("./fs/fonts/GapSansBlack.ttf");
 		console.log(font);
+	};
+
+	let pointsss;
+	let setGrid = (points) => {
+		pointsss = points;
+		pixies.iterate((e) => e.marked = true);
+		points.forEach((e) => {
+			let pix = pixies.getCell(e.x, e.y);
+			if (pix) pix.marked = false;
+			// else pix.marked = true;
+		});
 	};
 
 	p.setup = () => {
 		p.createCanvas(window.innerWidth, window.innerHeight);
-		p.textFont(font);
+		p.textFont("Times");
 		p.frameRate(60);
 		p.textSize(454);
-		textPoints = p.textToPoints("BOOK", 100, 856, .1, .5);
-		textPoints.forEach((e) => {
-			let pix = pixies.getCell(e.x, e.y);
-			if (pix) pix.marked = false;
+		let word =
+			"book ----- making ----- as meditative ----- practice as an excuse ----- to make books with friends as friends who love to meditate";
+		Array.from(new Set(word.split(" "))).forEach((letter) => {
+			alphabetPoints[letter] = p.textToPoints(letter, 100, 856, .1, .5);
 		});
-		p.textSize(7);
+
+		let letters = word.split(" ");
+		let index = 0;
+		setInterval(() => {
+			setGrid(alphabetPoints[letters[index % letters.length]]);
+			index++;
+		}, 3000);
+		p.textFont("monospace");
+		p.textSize(downscale);
 	};
 
-	setTimeout(() => {
-		p.draw = () => {
-			p.background("black");
+	let pressed = false;
 
+	setTimeout(() => {
+		p.mousePressed = () => {
+			pressed = true;
+		};
+
+		p.mouseReleased = () => {
+			pressed = false;
+		};
+
+		p.keyPressed = () => {
+			if (p.key == "ArrowUp") rotationAngle += 1;
+			if (p.key == "ArrowDown") rotationAngle -= 1;
+		};
+
+		p.draw = () => {
+			p.background(255);
+
+			if (pressed) {
+				let pix = pixies.getCell(p.mouseX, p.mouseY);
+				if (pix) pix.brightness = 1;
+			}
 			molds.forEach((m) => m.update(p));
 
+			let last;
 			pixies.iterate((pix) => {
-				p.stroke(255);
-				p.noStroke();
-
-				let chars = [".", ":", "-", "=", "+", "*", "#", "%", "@"];
-				p.fill((pix.brightness + .2) * 255);
+				let chars = [".", ":", "-", "=", "+", "*", "#", "%"];
+				// chars = [".", "\\", " | ", "=", " - ", " / "];
+				chars = ["c", "f", "u", "l", ">", ")", "))"];
+				// chars = ["c", "(", "-", "--", ">", ")"];
+				// p.textSize((pix.brightness) * 24);
+				// if (pix.brightness < .3) p.fill((pix.brightness) * 155, 155, 0);
 				// p.fill(255);
 				let char = chars[Math.floor(pix.brightness * chars.length)];
+				// char = "/";
 
 				if (pix.brightness > 0) {
-					// p.ellipse(pix.x, pix.y, downscale);
-					p.text(char, pix.x, pix.y);
+					if (pix.brightness > .9) {
+						p.fill(455 - ((pix.brightness) * 255));
+						p.fill(255);
+						p.stroke(0);
+						p.strokeWeight(pix.brightness * 2 + 1);
+						p.ellipse(pix.x, pix.y, downscale * 1.1);
+					} // else if (pix.brightness > .6) {
+					// 	p.fill(155 - ((pix.brightness) * 255));
+					// 	p.stroke(0);
+					//
+					// 	p.textSize(24);
+					//
+					// 	p.text(char, pix.x, pix.y);
+					// }
+					else {
+						p.fill(55 - ((pix.brightness) * 255));
+						p.strokeWeight(2.5);
+						p.stroke(0);
+						p.text(char, pix.x, pix.y);
+					}
+					// p.fill(0);
+					//
+					if (last) {
+						let diffX = p.abs(pix.x - last.x);
+						let diffY = p.abs(pix.y - last.y);
+
+						if (diffX < 55 && diffX > 15 && diffY < 55) {
+							// p.line(last.x, last.y, pix.x, pix.y);
+							p.noFill();
+							p.curve(
+								last.x - 40,
+								last.y + 45,
+								last.x,
+								last.y,
+								pix.x,
+								pix.y,
+								pix.x + 40,
+								pix.y + 45,
+							);
+						}
+						p.strokeWeight(1);
+					}
+
+					last = pix;
 				}
-				pix.brightness -= .01;
+
+				pix.brightness -= .015;
 			});
 
 			textPoints.forEach((e) => {
 				p.fill(255);
 			});
+
+			p.text("ANGLE: " + rotationAngle, 10, 10);
+
+			p.fill(200);
+			if (Array.isArray(pointsss)) {
+				pointsss.forEach((m) => p.ellipse(m.x, m.y, 2));
+			}
+			// molds.forEach((m) => m.draw(p));
 		};
 	}, 150);
 	// p.setup = () => {
