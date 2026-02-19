@@ -4,19 +4,7 @@ import { dom } from "./lib/dom.js";
 
 let container = [".q5"];
 
-let color1 = "";
-let color2 = "";
-let color3 = "";
-
-let width = window.innerWidth;
-let height = window.innerHeight;
-let downscale = 9;
-
 let v = (x, y) => ({ x, y });
-
-let sensorAngle = 45;
-let sensorDist = 15;
-let rotationAngle = sensorAngle;
 
 function createGrid(width, cellSize) {
 	const cellsPerRow = Math.floor(width / cellSize);
@@ -61,13 +49,30 @@ function createGrid(width, cellSize) {
 	return { getCell, iterate };
 }
 
-let pixies = createGrid(width, downscale);
+let state = {};
+
+state.colors = ["lightyellow", "lightblue", "lightpink"];
+state.colors = ["#0468AF", "#058EF0", "#4BB2FB"];
+
+state.chars = [".", ":", "-", "=", "+", "*", "#", "%"];
+// state.chars = ["c", "f", "u", "l", ">", ")", "))"];
+state.chars = "/|\\xo-.+=".split("");
+state.moldCount = 105;
+
+state.width = window.innerWidth;
+state.height = window.innerHeight;
+state.size = 9;
+state.sensorAngle = 45;
+state.sensorDist = 10;
+state.rotationAngle = state.sensorAngle;
+state.grid = createGrid(state.width, state.size);
+state.decay = .015;
 
 let mold = () => {
-	let x = Math.random() * width;
-	let y = Math.random() * height;
+	let x = Math.random() * state.width;
+	let y = Math.random() * state.height;
 	let r = 10;
-	let dist = sensorDist;
+	let dist = state.sensorDist;
 	let heading = Math.random() * 360;
 
 	let vx = Math.cos(heading);
@@ -84,31 +89,31 @@ let mold = () => {
 		x = x + vx;
 		y = y + vy;
 
-		if (x > width) x = x - width + 100;
-		if (y > height) y = y - height + 100;
+		if (x > state.width) x = x - state.width + 100;
+		if (y > state.height) y = y - state.height + 100;
 
 		if (x < 0) x = x * -1 + 100;
 		if (y < 0) y = y * -1 + 100;
 
-		let cell = pixies.getCell(x, y);
-		if (
-			cell &&
-			!cell.marked
-		) cell.brightness = 1;
-		// if (cell && cell.marked) cell.brightness = .2;
+		let cell = state.grid.getCell(x, y);
+		if (cell && !cell.marked) cell.brightness = 1;
 
-		sensorRightPos.x = x + sensorDist * Math.cos(heading + sensorAngle);
-		sensorRightPos.y = y + sensorDist * Math.sin(heading + sensorAngle);
+		sensorRightPos.x = x +
+			state.sensorDist * Math.cos(heading + state.sensorAngle);
+		sensorRightPos.y = y +
+			state.sensorDist * Math.sin(heading + state.sensorAngle);
 
-		sensorLeftPos.x = x + sensorDist * Math.cos(heading - sensorAngle);
-		sensorLeftPos.y = y + sensorDist * Math.sin(heading - sensorAngle);
+		sensorLeftPos.x = x +
+			state.sensorDist * Math.cos(heading - state.sensorAngle);
+		sensorLeftPos.y = y +
+			state.sensorDist * Math.sin(heading - state.sensorAngle);
 
-		sensorFrontPos.x = x + sensorDist * Math.cos(heading);
-		sensorFrontPos.y = y + sensorDist * Math.sin(heading);
+		sensorFrontPos.x = x + state.sensorDist * Math.cos(heading);
+		sensorFrontPos.y = y + state.sensorDist * Math.sin(heading);
 
-		let rpix = pixies.getCell(sensorRightPos.x, sensorRightPos.y);
-		let lpix = pixies.getCell(sensorLeftPos.x, sensorLeftPos.y);
-		let fpix = pixies.getCell(sensorFrontPos.x, sensorFrontPos.y);
+		let rpix = state.grid.getCell(sensorRightPos.x, sensorRightPos.y);
+		let lpix = state.grid.getCell(sensorLeftPos.x, sensorLeftPos.y);
+		let fpix = state.grid.getCell(sensorFrontPos.x, sensorFrontPos.y);
 
 		let rpixB = rpix ? rpix.brightness : 0;
 		let lpixB = lpix ? lpix.brightness : 0;
@@ -116,18 +121,15 @@ let mold = () => {
 
 		if (fpixB > rpixB && fpixB > lpixB) { }
 		else if (fpixB < rpixB && fpixB < lpixB) {
-			if (Math.random() > .5) heading += rotationAngle;
-			else heading -= rotationAngle;
-		} else if (rpixB > lpixB) heading += rotationAngle;
-		else if (rpixB < lpixB) heading -= rotationAngle;
+			if (Math.random() > .5) heading += state.rotationAngle;
+			else heading -= state.rotationAngle;
+		} else if (rpixB > lpixB) heading += state.rotationAngle;
+		else if (rpixB < lpixB) heading -= state.rotationAngle;
 	};
 
 	let draw = (p) => {
 		p.fill(255);
 		p.ellipse(x, y, r);
-
-		// p.stroke(255);
-		// p.line(x, y, x + dist * vx, y + dist * vy);
 
 		p.fill(255, 0, 0);
 		p.line(x, y, sensorRightPos.x, sensorRightPos.y);
@@ -150,26 +152,20 @@ let mold = () => {
 function init() {
 	let el = dom(container);
 	document.body.appendChild(el);
+
 	let p = new p5("instance", el);
 
-	let molds = Array(60).fill(0).map((e) => mold());
-	let textPoints = [];
+	let molds = Array(state.moldCount).fill(0).map((e) => mold());
+
 	let alphabetPoints = {};
-	let font;
-
-	p.preload = () => {
-		// font = p.loadFont("./fs/fonts/GapSansBlack.ttf");
-		console.log(font);
-	};
-
 	let pointsss;
+
 	let setGrid = (points) => {
 		pointsss = points;
-		pixies.iterate((e) => e.marked = true);
+		state.grid.iterate((e) => e.marked = true);
 		points.forEach((e) => {
-			let pix = pixies.getCell(e.x, e.y);
+			let pix = state.grid.getCell(e.x, e.y);
 			if (pix) pix.marked = false;
-			// else pix.marked = true;
 		});
 	};
 
@@ -180,18 +176,21 @@ function init() {
 		p.textSize(454);
 		let word =
 			"book ----- making ----- as meditative ----- practice as an excuse ----- to make books with friends as friends who love to meditate";
+
 		Array.from(new Set(word.split(" "))).forEach((letter) => {
 			alphabetPoints[letter] = p.textToPoints(letter, 100, 856, .1, .5);
 		});
 
 		let letters = word.split(" ");
 		let index = 0;
+
 		setInterval(() => {
 			setGrid(alphabetPoints[letters[index % letters.length]]);
 			index++;
 		}, 3000);
+
 		p.textFont("monospace");
-		p.textSize(downscale);
+		p.textSize(state.size * 1.5);
 	};
 
 	let pressed = false;
@@ -205,62 +204,44 @@ function init() {
 			pressed = false;
 		};
 
-		p.keyPressed = () => {
-			if (p.key == "ArrowUp") rotationAngle += 1;
-			if (p.key == "ArrowDown") rotationAngle -= 1;
-		};
-
 		p.draw = () => {
 			p.background(255);
 
 			if (pressed) {
-				let pix = pixies.getCell(p.mouseX, p.mouseY);
+				let pix = state.grid.getCell(p.mouseX, p.mouseY);
 				if (pix) pix.brightness = 1;
 			}
+
 			molds.forEach((m) => m.update(p));
 
 			let last;
-			pixies.iterate((pix) => {
-				let chars = [".", ":", "-", "=", "+", "*", "#", "%"];
-				// chars = [".", "\\", " | ", "=", " - ", " / "];
-				chars = ["c", "f", "u", "l", ">", ")", "))"];
-				// chars = ["c", "(", "-", "--", ">", ")"];
-				// p.textSize((pix.brightness) * 24);
-				// if (pix.brightness < .3) p.fill((pix.brightness) * 155, 155, 0);
-				// p.fill(255);
-				let char = chars[Math.floor(pix.brightness * chars.length)];
+			state.grid.iterate((pix) => {
+				let char = state.chars[Math.floor(pix.brightness * state.chars.length)];
 				// char = "/";
 
 				if (pix.brightness > 0) {
 					if (pix.brightness > .9) {
-						p.fill(455 - ((pix.brightness) * 255));
-						p.fill(255);
-						p.stroke(0);
+						// p.fill(455 - ((pix.brightness) * 255));
+						// p.fill(255);
+						p.fill(state.colors[1]);
+						p.stroke(state.colors[1]);
 						p.strokeWeight(pix.brightness * 2 + 1);
-						p.ellipse(pix.x, pix.y, downscale * 1.1);
-					} // else if (pix.brightness > .6) {
-					// 	p.fill(155 - ((pix.brightness) * 255));
-					// 	p.stroke(0);
-					//
-					// 	p.textSize(24);
-					//
-					// 	p.text(char, pix.x, pix.y);
-					// }
-					else {
-						p.fill(55 - ((pix.brightness) * 255));
+						p.ellipse(pix.x, pix.y, state.size * 1.1);
+					} else {
+						// p.fill(55 - ((pix.brightness) * 255));
+						p.fill(state.colors[2]);
 						p.strokeWeight(2.5);
-						p.stroke(0);
+						p.stroke(state.colors[2]);
 						p.text(char, pix.x, pix.y);
 					}
-					// p.fill(0);
-					//
+
+					p.noFill();
+					p.stroke(state.colors[0]);
 					if (last) {
 						let diffX = p.abs(pix.x - last.x);
 						let diffY = p.abs(pix.y - last.y);
 
 						if (diffX < 55 && diffX > 15 && diffY < 55) {
-							// p.line(last.x, last.y, pix.x, pix.y);
-							p.noFill();
 							p.curve(
 								last.x - 40,
 								last.y + 45,
@@ -278,24 +259,19 @@ function init() {
 					last = pix;
 				}
 
-				pix.brightness -= .015;
+				pix.brightness -= state.decay;
 			});
 
-			textPoints.forEach((e) => {
-				p.fill(255);
-			});
+			p.text("ANGLE: " + state.rotationAngle, 10, 10);
 
-			p.text("ANGLE: " + rotationAngle, 10, 10);
-
-			p.fill(200);
+			p.fill(state.colors[1]);
+			p.noStroke();
 			if (Array.isArray(pointsss)) {
 				pointsss.forEach((m) => p.ellipse(m.x, m.y, 2));
 			}
 			// molds.forEach((m) => m.draw(p));
 		};
-	}, 150);
-	// p.setup = () => {
-	// };
+	}, 15);
 }
 
 init();
