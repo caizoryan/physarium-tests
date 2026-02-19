@@ -233,7 +233,13 @@ function init() {
 		p.mousePressed = () => {
 			pressed = true;
 			console.log(state.grid.data);
-			saveData(state.grid, state.currentWord);
+			saveData(
+				{
+					grid: state.grid,
+					points: pointsss,
+				},
+				state.currentWord,
+			);
 		};
 
 		p.mouseReleased = () => {
