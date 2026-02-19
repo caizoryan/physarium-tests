@@ -235,7 +235,7 @@ function init() {
 			console.log(state.grid.data);
 			saveData(
 				{
-					grid: state.grid,
+					grid: state.grid.data,
 					points: pointsss,
 				},
 				state.currentWord,

@@ -5,11 +5,17 @@ import { Grid } from './grid.js';
 
 let points = fs.readFileSync('./Book.json', { encoding: 'utf8' })
 points = JSON.parse(points)
-points = points.data.filter(e => e.brightness > 0)
+points = {
+	grid: points.grid.filter(e => e.brightness > 0),
+	points: points.points
+}
 
 let making = fs.readFileSync("./Making.json", { encoding: "utf8" })
 making = JSON.parse(making)
-making = making.data.filter(e => e.brightness > 0)
+making = {
+	grid: making.grid.filter(e => e.brightness > 0),
+	points: making.points
+}
 
 let inch = v => v * 72
 let xCount = 12
@@ -137,20 +143,29 @@ spreads.push([
 	(doc) => {
 		doc.save()
 		doc.scale(.25)
-		let bounds = getBounds(points)
+		let bounds = getBounds(points.grid)
 		doc.rect(bounds.x, bounds.y, bounds.width, bounds.height)
 		doc.stroke('black')
 
-		renderCircles(doc, points)
-		renderText(doc, points)
+		renderCircles(doc, points.grid)
+		renderText(doc, points.grid)
+		renderBackground(doc, points.points)
 
 		doc.translate(bounds.width + 50, 0)
 
-		renderCircles(doc, making)
-		renderText(doc, making)
+		renderCircles(doc, making.grid)
+		renderText(doc, making.grid)
+		renderBackground(doc, making.points)
 
 		doc.restore()
 	}])
+
+let renderBackground = (doc, points) => {
+	points.forEach(e => {
+		doc.circle(e.x, e.y, 2)
+		doc.fill([0, 0, 0, 100])
+	})
+}
 
 let renderCircles = (doc, points) => {
 	points.forEach(e => {
@@ -215,17 +230,6 @@ let renderText = (doc, points) => {
 	)
 }
 
-let v = (x, y) => ({ x, y })
-let vdup = v => ({ x: v.x, y: v.y })
-
-// Default dimensions
-const defaultDimensions = {
-	width: nw,
-	height: nh,
-}
-
-
-
 function getBounds(points) {
 	if (!points.length) {
 		return { x: 0, y: 0, width: 0, height: 0 };
@@ -250,60 +254,6 @@ function getBounds(points) {
 		height: maxY - minY
 	};
 }
-
-
-
-function letterPage(code, transform = {}, dimensions = {
-	width: nw,
-	height: nh,
-}) {
-	let hangline = inch(6.5)
-	let spread = [
-		(doc) => {
-			line(doc, 0, hangline, 900, hangline, 'black', .1, 3)
-		}
-	]
-
-	let xOff = transform.xOff ? transform.xOff : 0
-
-	let positions = [
-		grid.verso_columns()[3].x,
-		grid.verso_columns()[6].x,
-		grid.recto_columns()[1].x,
-		grid.recto_columns()[4].x,
-		grid.recto_columns()[7].x,
-	]
-	let variable = [-3, -2, 0, 2, 3].forEach((e, i) => {
-		let itemX = positions[i]
-		// nx + xOff + i * 140
-
-		spread.push(doc => {
-			doc.fillOpacity(.9)
-			doc.rect(itemX - 23, inch(1.25), 95, 450)
-				.fillAndStroke('white', 'black')
-		})
-		let itemsDawg = letter(
-			itemX, hangline, dimensions.width + e, dimensions.height, code, {
-			...transform,
-		}, 'black', false, [90, 15, 0, 0], false)
-
-		spread.push(
-			foldSchematic(
-				itemX + 14,
-				grid.hanglines()[2],
-				dimensions.width + e,
-				dimensions.height,
-				code),
-		)
-
-		itemsDawg.forEach(e => spread.push(e))
-
-	})
-
-	return spread
-}
-
-
 
 spreads.push([
 	(doc) => draw_grid(doc, grid),
