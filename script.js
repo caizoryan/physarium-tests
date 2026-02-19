@@ -51,6 +51,7 @@ function createGrid(width, cellSize) {
 
 let state = {};
 
+state.loaded = 0;
 state.colors = ["lightyellow", "lightblue", "lightpink"];
 state.colors = ["#0468AF", "#058EF0", "#4BB2FB"];
 
@@ -161,6 +162,7 @@ function init() {
 	let pointsss;
 
 	let setGrid = (points) => {
+		state.loaded = 0;
 		pointsss = points;
 		state.grid.iterate((e) => e.marked = true);
 		points.forEach((e) => {
@@ -172,10 +174,9 @@ function init() {
 	p.setup = () => {
 		p.createCanvas(window.innerWidth, window.innerHeight);
 		p.textFont("Times");
-		p.frameRate(60);
+		p.frameRate(25);
 		p.textSize(454);
-		let word =
-			"book ----- making ----- as meditative ----- practice as an excuse ----- to make books with friends as friends who love to meditate";
+		let word = "window balls, box and time funks";
 
 		Array.from(new Set(word.split(" "))).forEach((letter) => {
 			alphabetPoints[letter] = p.textToPoints(letter, 100, 856, .1, .5);
@@ -187,10 +188,12 @@ function init() {
 		setInterval(() => {
 			setGrid(alphabetPoints[letters[index % letters.length]]);
 			index++;
-		}, 3000);
+		}, 5000);
 
 		p.textFont("monospace");
 		p.textSize(state.size * 1.5);
+
+		p.filter(p.BLUR, 3);
 	};
 
 	let pressed = false;
@@ -266,8 +269,13 @@ function init() {
 
 			p.fill(state.colors[1]);
 			p.noStroke();
+
 			if (Array.isArray(pointsss)) {
-				pointsss.forEach((m) => p.ellipse(m.x, m.y, 2));
+				state.loaded += 45;
+				pointsss.forEach((m, i) => {
+					if (i > state.loaded) return;
+					p.ellipse(m.x, m.y, 2);
+				});
 			}
 			// molds.forEach((m) => m.draw(p));
 		};
