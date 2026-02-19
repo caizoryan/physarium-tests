@@ -46,28 +46,39 @@ function createGrid(width, cellSize) {
 	}
 
 	// closure function
-	return { getCell, iterate };
+	return { getCell, iterate, data: grid };
 }
 
 let state = {};
 
 state.loaded = 0;
-state.colors = ["lightyellow", "lightblue", "lightpink"];
+state.colors = ["yellow", "blue", "red"];
 state.colors = ["#0468AF", "#058EF0", "#4BB2FB"];
+state.colors = ["#025002", "#119711", "#35BB35"];
 
 state.chars = [".", ":", "-", "=", "+", "*", "#", "%"];
 // state.chars = ["c", "f", "u", "l", ">", ")", "))"];
 state.chars = "/|\\xo-.+=".split("");
-state.moldCount = 105;
+state.moldCount = 85;
 
 state.width = window.innerWidth;
 state.height = window.innerHeight;
-state.size = 9;
+
+// state.width = 712;
+// state.height = 712;
+
+state.x = 100;
+state.y = 482;
+
+state.textSize = 400;
+
+state.size = 10;
 state.sensorAngle = 45;
-state.sensorDist = 10;
+state.sensorDist = 35;
 state.rotationAngle = state.sensorAngle;
 state.grid = createGrid(state.width, state.size);
 state.decay = .015;
+state.currentWord = "";
 
 let mold = () => {
 	let x = Math.random() * state.width;
@@ -159,34 +170,43 @@ function init() {
 	let molds = Array(state.moldCount).fill(0).map((e) => mold());
 
 	let alphabetPoints = {};
+	// let alphabetOutlinePoints = {};
 	let pointsss;
+	// let pointsssOutline;
 
-	let setGrid = (points) => {
+	let setGrid = (word) => {
 		state.loaded = 0;
-		pointsss = points;
+		state.currentWord = word;
+
+		p.textFont("Times");
+		p.textSize(state.textSize);
+		p.noStroke();
+		p.fill(0);
+
+		pointsss = p.textToPoints(word, state.x, state.y, .1, .5);
+
+		// pointsssOutline = pointsOutline;
 		state.grid.iterate((e) => e.marked = true);
-		points.forEach((e) => {
+		pointsss.forEach((e) => {
 			let pix = state.grid.getCell(e.x, e.y);
 			if (pix) pix.marked = false;
 		});
+
+		p.textSize(state.size);
 	};
 
 	p.setup = () => {
-		p.createCanvas(window.innerWidth, window.innerHeight);
-		p.textFont("Times");
-		p.frameRate(25);
-		p.textSize(454);
-		let word = "window balls, box and time funks";
-
-		Array.from(new Set(word.split(" "))).forEach((letter) => {
-			alphabetPoints[letter] = p.textToPoints(letter, 100, 856, .1, .5);
-		});
+		p.createCanvas(state.width, state.height);
+		p.frameRate(40);
+		let word = "Book Making as a Dawg Practice";
 
 		let letters = word.split(" ");
 		let index = 0;
 
 		setInterval(() => {
-			setGrid(alphabetPoints[letters[index % letters.length]]);
+			setGrid(
+				letters[index % letters.length],
+			);
 			index++;
 		}, 5000);
 
@@ -198,9 +218,22 @@ function init() {
 
 	let pressed = false;
 
+	let saveData = (json, file = "data") => {
+		let a = document.createElement("a");
+		var json = JSON.stringify(json),
+			blob = new Blob([json], { type: "octet/stream" }),
+			url = window.URL.createObjectURL(blob);
+		a.href = url;
+		a.download = file + ".json";
+		a.click();
+		window.URL.revokeObjectURL(url);
+	};
+
 	setTimeout(() => {
 		p.mousePressed = () => {
 			pressed = true;
+			console.log(state.grid.data);
+			saveData(state.grid, state.currentWord);
 		};
 
 		p.mouseReleased = () => {
@@ -229,7 +262,7 @@ function init() {
 						p.fill(state.colors[1]);
 						p.stroke(state.colors[1]);
 						p.strokeWeight(pix.brightness * 2 + 1);
-						p.ellipse(pix.x, pix.y, state.size * 1.1);
+						p.ellipse(pix.x, pix.y, state.size * .8);
 					} else {
 						// p.fill(55 - ((pix.brightness) * 255));
 						p.fill(state.colors[2]);
@@ -267,15 +300,40 @@ function init() {
 
 			p.text("ANGLE: " + state.rotationAngle, 10, 10);
 
-			p.fill(state.colors[1]);
-			p.noStroke();
-
 			if (Array.isArray(pointsss)) {
-				state.loaded += 45;
+				p.fill(state.colors[1]);
+				p.noStroke();
+				state.loaded += 65;
 				pointsss.forEach((m, i) => {
 					if (i > state.loaded) return;
-					p.ellipse(m.x, m.y, 2);
+					p.ellipse(m.x, m.y, 3);
 				});
+
+				// let lastPoint;
+				// pointsssOutline.forEach((m, i) => {
+				// 	p.noFill();
+				// 	p.stroke(state.colors[1]);
+				// 	if (lastPoint) {
+				// 		let diffX = p.abs(m.x - lastPoint.x);
+				// 		let diffY = p.abs(m.y - lastPoint.y);
+				//
+				// 		if (diffX < 45 && diffX > 15 && diffY < 45) {
+				// 			p.curve(
+				// 				lastPoint.x - 40,
+				// 				lastPoint.y + 45,
+				// 				lastPoint.x,
+				// 				lastPoint.y,
+				// 				m.x,
+				// 				m.y,
+				// 				m.x + 40,
+				// 				m.y + 45,
+				// 			);
+				// 		}
+				// 		p.strokeWeight(1);
+				// 	}
+				//
+				// 	lastPoint = m;
+				// });
 			}
 			// molds.forEach((m) => m.draw(p));
 		};
