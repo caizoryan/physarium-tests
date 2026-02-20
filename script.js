@@ -198,7 +198,8 @@ function init() {
 	p.setup = () => {
 		p.createCanvas(state.width, state.height);
 		p.frameRate(40);
-		let word = "Book Making as a Dawg Practice";
+		let word =
+			"book making as meditative practice as excuse to make books with friends as friends who love to meditate";
 
 		let letters = word.split(" ");
 		let index = 0;

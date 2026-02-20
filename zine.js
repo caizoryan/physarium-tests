@@ -2,20 +2,58 @@ import PDFDocument from 'pdfkit'
 import fs from 'fs'
 import { Grid } from './grid.js';
 
+function getBounds(points) {
+	if (!points.length) {
+		return { x: 0, y: 0, width: 0, height: 0 };
+	}
 
-let points = fs.readFileSync('./Book.json', { encoding: 'utf8' })
-points = JSON.parse(points)
-points = {
-	grid: points.grid.filter(e => e.brightness > 0),
-	points: points.points
+	let minX = points[0].x;
+	let maxX = points[0].x;
+	let minY = points[0].y;
+	let maxY = points[0].y;
+
+	for (const p of points) {
+		if (p.x < minX) minX = p.x;
+		if (p.x > maxX) maxX = p.x;
+		if (p.y < minY) minY = p.y;
+		if (p.y > maxY) maxY = p.y;
+	}
+
+	return {
+		x: minX,
+		y: minY,
+		width: maxX - minX,
+		height: maxY - minY
+	};
 }
 
-let making = fs.readFileSync("./Making.json", { encoding: "utf8" })
-making = JSON.parse(making)
-making = {
-	grid: making.grid.filter(e => e.brightness > 0),
-	points: making.points
-}
+let alphabets = {}
+let words = "book making"
+words.split(" ").forEach(word => {
+	let points = fs.readFileSync('./words/' + word + '.json', { encoding: 'utf8' })
+	points = JSON.parse(points)
+	points = points
+	// let bounds = getBounds(points.points)
+	let diffX = 0
+	let diffY = 0
+	let grid = points.grid.filter(e => e.brightness > 0).map(e => {
+		return { x: e.x - diffX, y: e.y - diffY }
+	})
+
+	let p = points.points.map(e => {
+		return { x: e.x - diffX, y: e.y - diffY }
+	})
+
+	points = {
+		grid,
+		points: p,
+		// width: bounds.width,
+		// height: bounds.height,
+	}
+
+	alphabets[word] = points
+})
+
 
 let inch = v => v * 72
 let xCount = 12
@@ -66,8 +104,8 @@ let grid = new Grid({
 	margin: {
 		top: inch(1),
 		bottom: inch(1 / 2),
-		inside: inch(1 / 4),
-		outside: inch(1 / 2),
+		inside: inch(1),
+		outside: inch(1),
 	},
 
 	gutter: inch(.125),
@@ -90,8 +128,8 @@ let grid = new Grid({
 	spread_width: inch(10),
 	spread_height: inch(8),
 
-	page_width: inch(8.5),
-	page_height: inch(11)
+	page_width: inch(11),
+	page_height: inch(8.5)
 })
 
 let draw_grid = (doc, grid) => {
@@ -140,29 +178,45 @@ let page_number = -1
 let spreads = []
 
 spreads.push([
+	(doc) => draw_grid(doc, grid),
 	(doc) => {
 		doc.save()
-		doc.scale(.25)
-		let bounds = getBounds(points.grid)
-		doc.rect(bounds.x, bounds.y, bounds.width, bounds.height)
-		doc.stroke('black')
 
-		renderCircles(doc, points.grid)
-		renderText(doc, points.grid)
-		renderBackground(doc, points.points)
+		doc.save()
+		writeDawg(doc, alphabets['book'], 0, 0)
+		doc.restore()
 
-		doc.translate(bounds.width + 50, 0)
-
-		renderCircles(doc, making.grid)
-		renderText(doc, making.grid)
-		renderBackground(doc, making.points)
+		doc.save()
+		writeDawg(doc, alphabets['making'], 150, 50)
+		doc.restore()
 
 		doc.restore()
-	}])
+	}],
+
+)
+
+
+function writeDawg(doc, points, x, y, layer = 1) {
+	doc.translate(x, y)
+	doc.scale(.15, { origin: [x, y] })
+
+	let bounds = getBounds(points.grid)
+	doc.rect(bounds.x, bounds.y, bounds.width, bounds.height)
+	doc.stroke('black')
+
+	if (layer == 1) renderBackground(doc, points.points);
+	if (layer == 2) renderCircles(doc, points.grid);
+	if (layer == 3) renderText(doc, points.grid);
+	else {
+		renderBackground(doc, points.points);
+		renderCircles(doc, points.grid);
+		renderText(doc, points.grid);
+	}
+}
 
 let renderBackground = (doc, points) => {
 	points.forEach(e => {
-		doc.circle(e.x, e.y, 2)
+		doc.circle(e.x, e.y, 1)
 		doc.fill([0, 0, 0, 100])
 	})
 }
@@ -187,8 +241,8 @@ let renderText = (doc, points) => {
 			let char = state.chars[Math.floor(e.brightness * state.chars.length)];
 			doc.fillColor('black')
 			doc.strokeColor("black")
-			doc.fontSize(9)
-			doc.lineWidth(2)
+			doc.fontSize(11)
+			doc.lineWidth(1)
 			doc.text(char, e.x, e.y,
 				{ stroke: true })
 				.stroke()
@@ -199,8 +253,8 @@ let renderText = (doc, points) => {
 			let diffY = Math.abs(pix.y - last.y);
 
 			if (diffX < 55 && diffX > 15 && diffY < 55) {
-				const x0 = last.x - 40;
-				const y0 = last.y + 45;
+				const x0 = last.x - 20;
+				const y0 = last.y + 35;
 
 				const x1 = last.x;
 				const y1 = last.y;
@@ -208,8 +262,8 @@ let renderText = (doc, points) => {
 				const x2 = pix.x;
 				const y2 = pix.y;
 
-				const x3 = pix.x + 40;
-				const y3 = pix.y + 45;
+				const x3 = pix.x + 20;
+				const y3 = pix.y + 25;
 
 				// p5 default curveTightness() = 0
 				const f = 1 / 6;
@@ -220,6 +274,7 @@ let renderText = (doc, points) => {
 				const c2x = x2 - (x3 - x1) * f;
 				const c2y = y2 - (y3 - y1) * f;
 
+				doc.lineWidth(2)
 				doc.moveTo(x1, y1)
 					.bezierCurveTo(c1x, c1y, c2x, c2y, x2, y2)
 					.stroke();
@@ -230,30 +285,6 @@ let renderText = (doc, points) => {
 	)
 }
 
-function getBounds(points) {
-	if (!points.length) {
-		return { x: 0, y: 0, width: 0, height: 0 };
-	}
-
-	let minX = points[0].x;
-	let maxX = points[0].x;
-	let minY = points[0].y;
-	let maxY = points[0].y;
-
-	for (const p of points) {
-		if (p.x < minX) minX = p.x;
-		if (p.x > maxX) maxX = p.x;
-		if (p.y < minY) minY = p.y;
-		if (p.y > maxY) maxY = p.y;
-	}
-
-	return {
-		x: minX,
-		y: minY,
-		width: maxX - minX,
-		height: maxY - minY
-	};
-}
 
 spreads.push([
 	(doc) => draw_grid(doc, grid),
@@ -284,7 +315,7 @@ spreads.push([blankpage])
 
 
 let writeSpreads = (spreads, filename) => {
-	const doc = new PDFDocument();
+	const doc = new PDFDocument({ layout: 'landscape' });
 	doc.pipe(fs.createWriteStream(filename));
 
 	spreads.forEach((spread, i) => {
