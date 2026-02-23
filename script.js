@@ -4,7 +4,72 @@ import { dom } from "./lib/dom.js";
 
 let container = [".q5"];
 
+let image = new Image();
+image.src = "./base.png";
+
 let v = (x, y) => ({ x, y });
+
+const imageToPoints = (img, sampleRate = 0.1, density = 1) => {
+	let x = 0;
+	let y = 0;
+	img.loadPixels();
+
+	let w = img.canvas.width,
+		h = img.canvas.height;
+
+	let points = [];
+
+	let offsetX = 0,
+		offsetY = 0;
+
+	let allPoints = [];
+
+	let r = Math.max(0.5, sampleRate);
+
+	for (let py = 0; py < h; py++) {
+		for (let px = 0; px < w; px++) {
+			let index = (py * w + px) * 4;
+
+			let r = img.pixels[index];
+			let g = img.pixels[index + 1];
+			let b = img.pixels[index + 2];
+
+			let gray = 0.299 * r + 0.587 * g + 0.114 * b;
+
+			// Math.random() > .95 ? console.log(gray) : null;
+			// if (gray != 255) console.log(gray);
+			// if (r != 0) console.log(r);
+			// if (g != 0) console.log(g);
+			// if (b != 0) console.log(b);
+			// console.log(luminance);
+
+			if ((r == 1 || img.random() < r) && gray < 245) {
+				allPoints.push({
+					x: px,
+					y: py,
+					z: gray,
+					// z: part1by1(px) | (part1by1(py) << 1),
+				});
+			}
+		}
+	}
+
+	let total = allPoints.length;
+	let numPoints = total * sampleRate * (1 / r);
+
+	if (sampleRate < 1) allPoints.sort((a, b) => a.z - b.z);
+
+	let step = total / numPoints;
+	for (let i = 0; i < total; i += step) {
+		let p = allPoints[Math.floor(i)];
+		points.push({
+			x: (p.x + offsetX) / density + x,
+			y: (p.y + offsetY) / density + y,
+		});
+	}
+
+	return points;
+};
 
 function createGrid(width, cellSize) {
 	const cellsPerRow = Math.floor(width / cellSize);
@@ -59,7 +124,7 @@ state.colors = ["#025002", "#119711", "#35BB35"];
 state.chars = [".", ":", "-", "=", "+", "*", "#", "%"];
 // state.chars = ["c", "f", "u", "l", ">", ")", "))"];
 state.chars = "/|\\xo-.+=".split("");
-state.moldCount = 85;
+state.moldCount = 185;
 
 state.width = window.innerWidth;
 state.height = window.innerHeight;
@@ -178,12 +243,24 @@ function init() {
 		state.loaded = 0;
 		state.currentWord = word;
 
-		p.textFont("Times");
-		p.textSize(state.textSize);
-		p.noStroke();
-		p.fill(0);
+		let graphic = p.createGraphics(792 * 2, 612 * 2);
+		graphic.textFont("Times");
+		graphic.textSize(state.textSize);
+		graphic.noStroke();
+		graphic.fill(0);
 
-		pointsss = p.textToPoints(word, state.x, state.y, .1, .5);
+		// graphic.text(word, 0, state.textSize);
+		// graphic.blendMode("MULTIPLY");
+		graphic.image(image, 0, 0, 792 * 2, 612 * 2);
+		// graphic.text("ASSHOLE", 0, 180);
+		// graphic.text("DAWG", 0, 480);
+
+		// p.image(graphic, 0, 0, 792, 612);
+		p.background(255);
+
+		pointsss = imageToPoints(graphic, .8, 1);
+		// pointsss.forEach((e) => p.circle(e.x, e.y, 15));
+		// p.noLoop();
 
 		// pointsssOutline = pointsOutline;
 		state.grid.iterate((e) => e.marked = true);
@@ -204,15 +281,14 @@ function init() {
 		let letters = word.split(" ");
 		let index = 0;
 
-		setInterval(() => {
+		setTimeout(() => {
 			setGrid(
 				letters[index % letters.length],
 			);
-			index++;
-		}, 5000);
+		}, 150);
 
 		p.textFont("monospace");
-		p.textSize(state.size * 1.5);
+		p.textSize(state.size * 2.5);
 
 		p.filter(p.BLUR, 3);
 	};
@@ -266,25 +342,33 @@ function init() {
 					if (pix.brightness > .9) {
 						// p.fill(455 - ((pix.brightness) * 255));
 						// p.fill(255);
-						p.fill(state.colors[1]);
+						p.noFill(state.colors[1]);
 						p.stroke(state.colors[1]);
 						p.strokeWeight(pix.brightness * 2 + 1);
 						p.ellipse(pix.x, pix.y, state.size * .8);
 					} else {
 						// p.fill(55 - ((pix.brightness) * 255));
 						p.fill(state.colors[2]);
-						p.strokeWeight(2.5);
+						p.strokeWeight(1.5);
 						p.stroke(state.colors[2]);
+						p.noStroke();
 						p.text(char, pix.x, pix.y);
 					}
 
 					p.noFill();
-					p.stroke(state.colors[0]);
+					p.stroke(state.colors[2]);
+					p.strokeWeight(2.5);
 					if (last) {
 						let diffX = p.abs(pix.x - last.x);
 						let diffY = p.abs(pix.y - last.y);
 
-						if (diffX < 55 && diffX > 15 && diffY < 55) {
+						if (
+							// true
+							// diffY < 85 &&
+							diffY > 1 &&
+							diffX > 1 &&
+							diffX < 285
+						) {
 							p.curve(
 								last.x - 40,
 								last.y + 45,
@@ -296,10 +380,13 @@ function init() {
 								pix.y + 45,
 							);
 						}
+
 						p.strokeWeight(1);
 					}
 
+					// if (!last)
 					last = pix;
+					// Math.random() > .3 ? last = pix : null;
 				}
 
 				pix.brightness -= state.decay;

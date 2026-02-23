@@ -28,20 +28,21 @@ function getBounds(points) {
 }
 
 let alphabets = {}
-let words = "book making"
+let words = "book making as meditative practice as_1 excuse to make books with friends friends_1 who love to meditate"
 words.split(" ").forEach(word => {
+	console.log("Reading", word)
 	let points = fs.readFileSync('./words/' + word + '.json', { encoding: 'utf8' })
 	points = JSON.parse(points)
 	points = points
-	// let bounds = getBounds(points.points)
-	let diffX = 0
-	let diffY = 0
+	let bounds = getBounds(points.points)
+	let diffX = bounds.x
+	let diffY = bounds.y
 	let grid = points.grid.filter(e => e.brightness > 0).map(e => {
-		return { x: e.x - diffX, y: e.y - diffY }
+		return { x: e.x - diffX, y: e.y - diffY, brightness: e.brightness }
 	})
 
 	let p = points.points.map(e => {
-		return { x: e.x - diffX, y: e.y - diffY }
+		return { x: e.x - diffX, y: e.y - diffY, brightness: e.brightness }
 	})
 
 	points = {
@@ -102,10 +103,10 @@ let line = (doc, x1, y1, x2, y2, strokeColor = 'black', strokeWeight = 1, dash) 
 
 let grid = new Grid({
 	margin: {
-		top: inch(1),
-		bottom: inch(1 / 2),
+		top: inch(.25),
+		bottom: inch(1 / 4),
 		inside: inch(1),
-		outside: inch(1),
+		outside: inch(1.25),
 	},
 
 	gutter: inch(.125),
@@ -178,36 +179,112 @@ let page_number = -1
 let spreads = []
 
 spreads.push([
-	(doc) => draw_grid(doc, grid),
 	(doc) => {
-		doc.save()
-
-		doc.save()
-		writeDawg(doc, alphabets['book'], 0, 0)
-		doc.restore()
-
-		doc.save()
-		writeDawg(doc, alphabets['making'], 150, 50)
-		doc.restore()
-
-		doc.restore()
+		frontCover(doc, 1)
+		backCover(doc, 1)
 	}],
-
 )
+
+spreads.push([
+	(doc) => {
+		frontCover(doc, 2)
+		backCover(doc, 2)
+	}],
+)
+
+spreads.push([
+	(doc) => {
+		frontCover(doc, 3)
+		backCover(doc, 3)
+	}],
+)
+
+spreads.push([
+	(doc) => {
+		frontCover(doc, 4)
+		backCover(doc, 4)
+	}],
+)
+
+spreads.push([
+	(doc) => {
+		frontCover(doc, 0)
+		backCover(doc, 0)
+	}],
+)
+
+let frontCover = (doc, layer) => {
+	let startX = 260
+	let startY = 40
+	let leading = 25
+	let line = num => num * leading + startY
+
+	let words = {
+		"book": [startX, startY],
+		"making": [startX, line(1)],
+		"as": [startX + 90, line(1.25)],
+		"meditative": [startX, line(2.1)],
+		"practice": [startX, line(3.1)],
+		"as_1": [startX + 95, line(3.35)],
+		"excuse": [startX, line(4.35)],
+		"to": [startX + 85, line(4.25)],
+	}
+
+
+	Object.entries(words).forEach(([word, args]) => {
+		doc.save()
+		writeDawg(doc, alphabets[word], args[0], args[1], layer)
+		doc.restore()
+	})
+}
+
+let backCover = (doc, layer) => {
+	let startX = 40
+	let startY = -40
+	let leading = 25
+	let line = num => num * leading + startY
+
+	let words = {
+		"make": [startX, line(5.25)],
+		"books": [startX + 25, line(6.25)],
+		"with": [startX, line(7.25)],
+		"friends": [startX, line(8.25)],
+		"as": [startX + 79, line(8.25)],
+		"friends_1": [startX + 20, line(9.25)],
+		"who": [startX, line(10.25)],
+		"love": [startX + 79, line(10.25)],
+		"to": [startX + 79, line(11.25)],
+		"meditate": [startX, line(12.25)],
+	}
+
+	Object.entries(words).forEach(([word, args]) => {
+		doc.save()
+		writeDawg(doc, alphabets[word], ...args, layer)
+		doc.restore()
+	})
+}
 
 
 function writeDawg(doc, points, x, y, layer = 1) {
-	doc.translate(x, y)
-	doc.scale(.15, { origin: [x, y] })
+	doc.translate(x
+		// + Math.random() * 5
+		,
+		y
+		// + Math.random() * 5
+	)
+	doc.scale(.13, { origin: [x, y] })
 
 	let bounds = getBounds(points.grid)
-	doc.rect(bounds.x, bounds.y, bounds.width, bounds.height)
-	doc.stroke('black')
+	// doc.rect(bounds.x, bounds.y, bounds.width, bounds.height)
+	// doc.stroke('black')
+	//
+	console.log("WHAT THEFUCK", layer)
 
 	if (layer == 1) renderBackground(doc, points.points);
 	if (layer == 2) renderCircles(doc, points.grid);
 	if (layer == 3) renderText(doc, points.grid);
-	else {
+	if (layer == 4) renderBlobs(doc, points.grid);
+	if (layer == 0) {
 		renderBackground(doc, points.points);
 		renderCircles(doc, points.grid);
 		renderText(doc, points.grid);
@@ -216,7 +293,7 @@ function writeDawg(doc, points, x, y, layer = 1) {
 
 let renderBackground = (doc, points) => {
 	points.forEach(e => {
-		doc.circle(e.x, e.y, 1)
+		doc.circle(e.x, e.y, 2)
 		doc.fill([0, 0, 0, 100])
 	})
 }
@@ -237,16 +314,75 @@ let renderText = (doc, points) => {
 	let last
 	points.forEach(e => {
 		if (e.brightness <= .9) {
-
 			let char = state.chars[Math.floor(e.brightness * state.chars.length)];
 			doc.fillColor('black')
 			doc.strokeColor("black")
 			doc.fontSize(11)
 			doc.lineWidth(1)
+			// doc.circle(e.x, e.y, 25)
+			// doc.fill('black')
 			doc.text(char, e.x, e.y,
-				{ stroke: true })
-				.stroke()
+				// { width: 500, height: 500 }
+				{ stroke: true }
+			)
 		}
+
+		let pix = e
+		if (last) {
+			let diffX = Math.abs(pix.x - last.x);
+			let diffY = Math.abs(pix.y - last.y);
+
+			if (diffX < 55 && diffX > 15 && diffY < 55) {
+				const x0 = last.x - 20;
+				const y0 = last.y + 35;
+
+				const x1 = last.x;
+				const y1 = last.y;
+
+				const x2 = pix.x;
+				const y2 = pix.y;
+
+				const x3 = pix.x + 20;
+				const y3 = pix.y + 25;
+
+				// p5 default curveTightness() = 0
+				const f = 1 / 6;
+
+				const c1x = x1 + (x2 - x0) * f;
+				const c1y = y1 + (y2 - y0) * f;
+
+				const c2x = x2 - (x3 - x1) * f;
+				const c2y = y2 - (y3 - y1) * f;
+
+				doc.lineWidth(2)
+				doc.moveTo(x1, y1)
+					.bezierCurveTo(c1x, c1y, c2x, c2y, x2, y2)
+					.stroke();
+			}
+		}
+		last = pix;
+	}
+	)
+}
+
+let renderBlobs = (doc, points) => {
+	let last
+	points.forEach(e => {
+		if (e.brightness <= .9) {
+			let char = state.chars[Math.floor(e.brightness * state.chars.length)];
+			doc.fillColor('black')
+			doc.strokeColor("black")
+			doc.fontSize(11)
+			// doc.lineWidth(1)
+			doc.circle(e.x, e.y, 25)
+			doc.fill('black')
+			doc.text('x', e.x, e.y,
+				{ width: 500, height: 500 }
+				// { stroke: true }
+			)
+			// .stroke()
+		}
+
 		let pix = e
 		if (last) {
 			let diffX = Math.abs(pix.x - last.x);
