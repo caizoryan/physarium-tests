@@ -4,78 +4,14 @@ import { dom } from "./lib/dom.js";
 
 let container = [".q5"];
 
-let image = new Image();
-image.src = "./base.png";
+// let image = new Image();
+// image.src = "./base.png";
 
-let pageWidth = window.innerWidth ;
-let pageHeight = 1200 ;
+let pageWidth = 792 * 2;
+let pageHeight = 612 * 2;
 
 let v = (x, y) => ({ x, y });
 let c = 0
-
-
-let state = {};
-
-state.iterations = 15
-state.width = pageWidth;
-state.height = pageHeight;
-
-state.lineDiff = {
-	xMin: 25,
-	xMax: 35,
-	yMin: 5,
-	yMax: 365,
-}
-
-state.loaded = 0;
-state.colors = ["yellow", "blue", "red"];
-state.colors = ["#0468AF", "#058EF0", "#4BB2FB"];
-state.colors = ["#025002", "#119711", "#35BB35"];
-state.colors = ["yellow", "blue", "red"];
-state.colors = ["black", "black", "black"];
-
-  // state.chars = ["c", "f", "u", "l", ">", ")", "))"];
-// state.chars = "/|\\xo-.+=".split("");
-// state.chars = ".:+x//+कग/ङविचा.x*^टध्यान///".split("");
-state.chars = [".", ":", "-", "=", "+", "*", "#", "%"];
- state.chars = ".:+x//+कग/ङविचा.x*^टध्यान///".split("");
-state.moldCount = 85;
-
-// state.width = 712;
-// state.height = 712;
-
-state.x = 100;
-state.y = 482;
-
-state.textSize = 240;
-state.disturbance = 0;
-
-state.fontFamily = 'Times'
-// state.blobSize = () => Math.random() * 8  ;
-state.blobSize =  18  ;
-state.filter = ''
-state.filter = 'blobify'
-state.blobShape = 'rect'
-state.blobShape = 'circle'
-state.strokeWeight = 4
-// state.outlineSize = () => Math.random() * 8 
-state.outlineSize =  4  
-
-state.letter = 'PHYSARIUM'
-state.sampleRate = .8
-state.mainSampleRate = .6
-state.density = 1 
-
-state.size = 14
-state.asciiSize = state.size * 1.2;
-state.asciiFill = 1
-state.asciiStroke = 2
-state.sensorAngle = 35;
-state.sensorDist = 35;
-state.rotationAngle = state.sensorAngle;
-state.grid = createGrid(state.width, state.size);
-state.decay = .025;
-state.currentWord = "";
 
 const imageToPoints = (img, sampleRate = 0.1, density = 1) => {
 	let x = 0;
@@ -94,16 +30,6 @@ const imageToPoints = (img, sampleRate = 0.1, density = 1) => {
 
 	let r = Math.max(0.5, sampleRate);
 
-		const part1by1 = (n) => {
-			n &= 0x0000ffff;
-			n = (n | (n << 8)) & 0x00ff00ff;
-			n = (n | (n << 4)) & 0x0f0f0f0f;
-			n = (n | (n << 2)) & 0x33333333;
-			n = (n | (n << 1)) & 0x55555555;
-			return n;
-		};
-
-	let strat = 0
 	for (let py = 0; py < h; py++) {
 		for (let px = 0; px < w; px++) {
 			let index = (py * w + px) * 4;
@@ -111,20 +37,20 @@ const imageToPoints = (img, sampleRate = 0.1, density = 1) => {
 			let r = img.pixels[index];
 			let g = img.pixels[index + 1];
 			let b = img.pixels[index + 2];
-			let a = img.pixels[index + 3];
 
-			let gray = 0.299 * r + 0.587 * g + 0.114 * b + a;
+			let gray = 0.299 * r + 0.587 * g + 0.114 * b;
 
-			// if (c < 1000){
-			// 	c++
-			// 	console.log(a, gray, allPoints)
-			// }
+			if (c < 1000){
+				c++
+				console.log(gray, allPoints)
+			}
 
-			if ((r == 1 || img.random() < r) && gray < (255+255)) {
+			if ((r == 1 || img.random() < r) && gray < 245) {
 				allPoints.push({
 					x: px,
 					y: py,
-					z: strat ? gray : part1by1(px) | (part1by1(py) << 1),
+					z: gray,
+					// z: part1ky1(px) | (part1by1(py) << 1),
 				});
 			}
 		}
@@ -189,6 +115,40 @@ function createGrid(width, cellSize) {
 	// closure function
 	return { getCell, iterate, data: grid };
 }
+
+let state = {};
+
+state.width = pageWidth;
+state.height = pageHeight;
+state.strokeWeight = 1
+state.loaded = 0;
+state.colors = ["yellow", "blue", "red"];
+state.colors = ["#0468AF", "#058EF0", "#4BB2FB"];
+state.colors = ["#025002", "#119711", "#35BB35"];
+state.colors = ["yellow", "blue", "red"];
+state.colors = ["black", "black", "black"];
+
+state.chars = [".", ":", "-", "=", "+", "*", "#", "%"];
+// state.chars = ["c", "f", "u", "l", ">", ")", "))"];
+// state.chars = "/|\\xo-.+=".split("");
+state.chars = ".:+x//+कग/ङविचा.x*^टध्यान///".split("");
+state.moldCount = 75;
+
+// state.width = 712;
+// state.height = 712;
+
+state.x = 100;
+state.y = 482;
+
+state.textSize = 400;
+
+state.size = 8;
+state.sensorAngle = 45;
+state.sensorDist = 35;
+state.rotationAngle = state.sensorAngle;
+state.grid = createGrid(state.width, state.size);
+state.decay = .015;
+state.currentWord = "";
 
 let mold = () => {
 	let x = Math.random() * state.width;
@@ -271,79 +231,72 @@ let mold = () => {
 	return { draw, update };
 };
 
-
-let setGrid = (word) => {
-	state.loaded = 999999;
-	state.currentWord = word;
-
-	let padding = 350
-	let letter = p.createGraphics(pageWidth, pageHeight)
-	let graphic = p.createGraphics(pageWidth, pageHeight);
-
-	letter.textFont(state.fontFamily);
-	letter.noStroke();
-	// graphic.fill(255);
-
-	letter.background(255)
-	letter.fill(0)
-	letter.textSize(state.textSize);
-	letter.text(word, padding/6, state.textSize);
-	graphic.image(letter, 0, 0, letter.width, letter.height);
-
-	if (state.filter == 'blobify') {
-		let _pointsss = imageToPoints(graphic, state.sampleRate, state.density);
-		letter.background(255)
-		_pointsss.forEach((e) => {
-			let size = typeof state.blobSize == 'function' ? state.blobSize() : state.blobSize
-			if (state.blobShape == 'circle') {
-				letter.circle(e.x+Math.random()*state.disturbance, e.y,size)
-			}
-
-			else if (state.blobShape == 'rect'){
-				letter.rect(e.x-(size/2)+Math.random()*state.disturbance, e.y-(size/2), size)
-			}
-		});
-
-		graphic.background(255)
-		graphic.image(letter, 0, 0, letter.width, letter.height);
-		// p.noLoop()
-	}
-	//
-	setTimeout(() => {
-		p.image(letter, 0,0,graphic.width, graphic.height)
-		p.noLoop()
-	}, 250)
-
-	pointsss = imageToPoints(graphic, state.mainSampleRate);
-	state.grid.iterate((e) => e.marked = true);
-	pointsss.forEach((e) => {
-		let pix = state.grid.getCell(e.x, e.y);
-		if (pix) pix.marked = false;
-	});
-};
-
-let p
-let pointsss;
-
 function init() {
 	let el = dom(container);
 	document.body.appendChild(el);
 
-	p = new p5("instance", el);
+	let p = new p5("instance", el);
 
 	let molds = Array(state.moldCount).fill(0).map((e) => mold());
 
 	let alphabetPoints = {};
 	// let alphabetOutlinePoints = {};
+	let pointsss;
 	// let pointsssOutline;
 
+	let setGrid = (word) => {
+		state.loaded = 999999;
+		state.currentWord = word;
+
+		let graphic = p.createGraphics(pageWidth, pageHeight);
+		graphic.textFont("Times");
+		graphic.textSize(state.textSize);
+		graphic.noStroke();
+		graphic.fill(0);
+
+		graphic.text(word, 0, state.textSize);
+		// graphic.blendMode(graphic.MULTIPLY);
+		// graphic.image(image, 0, 0, pageWidth, pageHeight);
+		// graphic.image(image2, 0, 0, 792 * 2, 612 * 2);
+		// graphic.text("ASSHOLE", 0, 180);
+		// graphic.text("DAWG", 0, 480);
+
+		// p.image(graphic, 0, 0, 792, 612);
+		// p.background(255);
+
+		pointsss = imageToPoints(graphic, .5, 1);
+		// pointsss = imageToPoints(graphic, .6, 1);
+		console.log(pointsss)
+		pointsss.forEach((e) => p.circle(e.x, e.y, 15));
+		// p.noLoop();
+
+		// pointsssOutline = pointsOutline;
+		state.grid.iterate((e) => e.marked = true);
+		pointsss.forEach((e) => {
+			let pix = state.grid.getCell(e.x, e.y);
+			if (pix) pix.marked = false;
+		});
+	};
 
 	p.setup = () => {
 		p.createCanvas(state.width, state.height);
-		setGrid(state.letter);
+		// p.frameRate(1);
+		let word =
+			"bosok making as meditative practice as excuse to make books with friends as friends who love to meditate";
+
+		let letters = word.split(" ");
+		let index = 0;
+
+		setTimeout(() => {
+			setGrid(
+				letters[index % letters.length],
+			);
+		}, 150);
 
 		p.textFont("monospace");
-		p.textSize(state.asciiSize);
+		p.textSize(state.size * 1.3);
+
+		p.filter(p.BLUR, 3);
 	};
 
 	let pressed = false;
@@ -359,10 +312,18 @@ function init() {
 		window.URL.revokeObjectURL(url);
 	};
 
+	setTimeout(() => {
 		p.mousePressed = () => {
 			pressed = true;
 			console.log(state.grid.data);
 			p.save();
+			// saveData(
+			// 	{
+			// 		grid: state.grid.data,
+			// 		points: pointsss,
+			// 	},
+			// 	state.currentWord,
+			// );
 		};
 
 		p.mouseReleased = () => {
@@ -370,9 +331,6 @@ function init() {
 		};
 
 		p.draw = () => {
-			p.frameRate(8)
-			if (state.iterations == 0) return
-			state.iterations--
 			p.background(255);
 
 			if (pressed) {
@@ -388,11 +346,11 @@ function init() {
 				state.loaded += 65;
 				pointsss.forEach((m, i) => {
 					if (i > state.loaded) return;
-					p.ellipse(m.x, m.y, 
-						typeof state.outlineSize=='function'
-						? state.outlineSize()
-						: state.outlineSize
-					);
+					p.ellipse(m.x, m.y, 2);
+					//
+					// let char =
+					// 	state.chars[Math.floor(m.x / p.width * state.chars.length)];
+					// p.text(char, m.x, m.y);
 				});
 			}
 
@@ -400,29 +358,29 @@ function init() {
 			let possiblePoints = [];
 			state.grid.iterate((pix) => {
 				let char = state.chars[Math.floor(pix.brightness * state.chars.length)];
+				// char = "/";
 
 				if (pix.brightness > 0) {
 					if (pix.brightness > .9) {
+						// p.fill(455 - ((pix.brightness) * 255));
+						// p.fill(255);
 						p.noFill(state.colors[1]);
 						p.stroke(state.colors[1]);
 						p.strokeWeight(pix.brightness * 4);
 						p.ellipse(pix.x, pix.y, state.size * .8);
 						possiblePoints.push(pix);
 					} else {
-						if (state.asciiFill) p.fill(state.asciiFill);
-
-						if (state.asciiStroke) {
-							p.strokeWeight(state.asciiStroke)
-							p.stroke(state.colors[2]);
-						}
-
+						// p.fill(55 - ((pix.brightness) * 255));
+						p.fill(state.colors[2]);
+						p.strokeWeight(2.2);
+						p.stroke(state.colors[2]);
+						// p.noStroke();
 						p.text(char, pix.x, pix.y);
 					}
 
 					p.noFill();
 					p.stroke(state.colors[2]);
 					p.strokeWeight(state.strokeWeight);
-
 					let possibleIndex = Math.floor(Math.random() * possiblePoints.length);
 					let possible = possiblePoints[possibleIndex];
 
@@ -432,26 +390,26 @@ function init() {
 
 						if (
 							// true
-							diffY < state.lineDiff.yMax &&
-							diffY > state.lineDiff.yMin &&
-							diffX > state.lineDiff.xMin &&
-							diffX < state.lineDiff.xMax
+							diffY < 285 &&
+							diffY > 45 &&
+							diffX > 25 &&
+							diffX < 65
 						) {
 							p.curve(
-								possible.x - 15,
-								possible.y + 85,
+								possible.x - 35,
+								possible.y - 25,
 								possible.x,
 								possible.y,
 								pix.x,
 								pix.y,
-								pix.x - 85,
-								pix.y + 65,
+								pix.x - 35,
+								pix.y + 25,
 							);
 
 							p.fill(255);
-							p.noFill();
 							p.square(possible.x - 5, possible.y - 5, 10);
 							p.square(pix.x - 5, pix.y - 5, 10);
+							p.noFill();
 							possiblePoints.splice(possibleIndex, 1);
 						}
 
@@ -466,19 +424,11 @@ function init() {
 				pix.brightness -= state.decay;
 			});
 
+			p.text("ANGLE: " + state.rotationAngle, 10, 10);
+
+			// molds.forEach((m) => m.draw(p));
 		};
-}
-
-let reset = () => {
-	state.iterations = 45
-	// set_grid
-	p.loop()
-}
-
-document.onkeydown = e => {
-	if (e.key == 'ArrowRight') {
-		state.iterations += 5
-	}
+	}, 15);
 }
 
 init();
