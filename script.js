@@ -52,7 +52,7 @@ state.disturbance = 0;
 
 state.fontFamily = 'Times'
 // state.blobSize = () => Math.random() * 8  ;
-state.blobSize =  18  ;
+state.blobSize =  28  ;
 state.filter = ''
 state.filter = 'blobify'
 state.blobShape = 'rect'
@@ -62,8 +62,8 @@ state.strokeWeight = 4
 state.outlineSize =  4  
 
 state.letter = 'PHYSARIUM'
-state.sampleRate = .8
-state.mainSampleRate = .6
+state.sampleRate = .05
+state.mainSampleRate = .9
 state.density = 1 
 
 state.size = 14
@@ -309,10 +309,10 @@ let setGrid = (word) => {
 		// p.noLoop()
 	}
 	//
-	setTimeout(() => {
-		p.image(letter, 0,0,graphic.width, graphic.height)
-		p.noLoop()
-	}, 250)
+	// setTimeout(() => {
+	// 	p.image(letter, 0,0,graphic.width, graphic.height)
+	// 	p.noLoop()
+	// }, 250)
 
 	pointsss = imageToPoints(graphic, state.mainSampleRate);
 	state.grid.iterate((e) => e.marked = true);
