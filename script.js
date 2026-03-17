@@ -16,14 +16,14 @@ let c = 0
 
 let state = {};
 
-state.iterations = 15
+state.iterations = 45
 state.width = pageWidth;
 state.height = pageHeight;
 
 state.lineDiff = {
-	xMin: 25,
-	xMax: 35,
-	yMin: 5,
+	xMin: 15,
+	xMax: 65,
+	yMin: 15,
 	yMax: 365,
 }
 
@@ -38,16 +38,15 @@ state.colors = ["black", "black", "black"];
 // state.chars = "/|\\xo-.+=".split("");
 // state.chars = ".:+x//+कग/ङविचा.x*^टध्यान///".split("");
 state.chars = [".", ":", "-", "=", "+", "*", "#", "%"];
- state.chars = ".:+x//+कग/ङविचा.x*^टध्यान///".split("");
-state.moldCount = 85;
-
-// state.width = 712;
-// state.height = 712;
+ state.chars = ".:+x//+कग/.x*^टध्यान///".split("");
+state.moldCount = 25;
 
 state.x = 100;
 state.y = 482;
 
 state.textSize = 240;
+state.showLayer = true;
+state.layerOpacity = .2
 state.disturbance = 0;
 
 state.fontFamily = 'Times'
@@ -63,15 +62,15 @@ state.outlineSize =  4
 
 state.letter = 'PHYSARIUM'
 state.sampleRate = .05
-state.mainSampleRate = .9
+state.mainSampleRate = .69
 state.density = 1 
 
 state.size = 14
-state.asciiSize = state.size * 1.2;
+state.asciiSize = state.size * 2.6;
 state.asciiFill = 1
-state.asciiStroke = 2
-state.sensorAngle = 35;
-state.sensorDist = 35;
+state.asciiStroke = 0
+state.sensorAngle = 45;
+state.sensorDist = 25;
 state.rotationAngle = state.sensorAngle;
 state.grid = createGrid(state.width, state.size);
 state.decay = .025;
@@ -103,7 +102,7 @@ const imageToPoints = (img, sampleRate = 0.1, density = 1) => {
 			return n;
 		};
 
-	let strat = 0
+	let strat = 1
 	for (let py = 0; py < h; py++) {
 		for (let px = 0; px < w; px++) {
 			let index = (py * w + px) * 4;
@@ -271,14 +270,15 @@ let mold = () => {
 	return { draw, update };
 };
 
+let letter, graphic
 
 let setGrid = (word) => {
 	state.loaded = 999999;
 	state.currentWord = word;
 
 	let padding = 350
-	let letter = p.createGraphics(pageWidth, pageHeight)
-	let graphic = p.createGraphics(pageWidth, pageHeight);
+ letter = p.createGraphics(pageWidth, pageHeight)
+	 graphic = p.createGraphics(pageWidth, pageHeight);
 
 	letter.textFont(state.fontFamily);
 	letter.noStroke();
@@ -374,6 +374,13 @@ function init() {
 			if (state.iterations == 0) return
 			state.iterations--
 			p.background(255);
+			if (state.showLayer) {
+				p.opacity(state.layerOpacity)
+				// p.blendMode(p.MULTIPLY)
+				p.image(graphic, 0, 0, graphic.width, graphic.height);
+				p.opacity(1)
+				p.blendMode(p.BLEND)
+			}
 
 			if (pressed) {
 				let pix = state.grid.getCell(p.mouseX, p.mouseY);
